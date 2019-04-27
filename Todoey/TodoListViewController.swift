@@ -18,10 +18,10 @@ class TodoListViewController: UITableViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         //print(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask))
-        //loadData()
+        loadData()
     }
     
-    // MARK - TableView Controller DataSource Methods
+    //MARK: - TableView Controller DataSource Methods
     // - - - - - - - - - - - - - - - - - - - - - - - -
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "TodoItemCell", for: indexPath)
@@ -37,7 +37,9 @@ class TodoListViewController: UITableViewController {
     }
     
     
-    // MARK - TableView Delegate Methods
+    
+    
+    //MARK: - TableView Delegate Methods
     // - - - - - - - - - - - - - - - - -
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         itemsArray[indexPath.row].isChecked = !itemsArray[indexPath.row].isChecked
@@ -71,7 +73,9 @@ class TodoListViewController: UITableViewController {
     }
     
     
-    // MARK - Model Manipulation Methods
+    
+    
+    // MARK: - Model Manipulation Methods
     // - - - - - - - - - - - - - - - - -
     func saveData() {
         
@@ -84,17 +88,43 @@ class TodoListViewController: UITableViewController {
         self.tableView.reloadData()
     }
     
-//    func loadData() {
-//        if let data = try? Data(contentsOf: dataFilePath!) {
-//            let decoder = PropertyListDecoder()
-//
-//            do {
-//                itemsArray = try decoder.decode([Todo].self, from: data)
-//            } catch {
-//                print("Error: \(error)")
-//            }
-//        }
-//    }
+    func loadData(with request: NSFetchRequest<Todo> = Todo.fetchRequest()) {
+        do {
+            itemsArray = try context.fetch(request)
+        } catch {
+            print("Error: \(error)")
+        }
+        
+        tableView.reloadData()
+    }
 
+}
+
+
+
+//MARK: - Search Bar Delegate Methods
+extension TodoListViewController : UISearchBarDelegate {
+    
+    //  -- Query items by title containing search parameters --
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        
+        let request : NSFetchRequest<Todo> = Todo.fetchRequest()
+        request.predicate = NSPredicate(format: "title CONTAINS[cd] %@", searchBar.text!)
+        request.sortDescriptors = [NSSortDescriptor(key: "title", ascending: true)]
+        
+        loadData(with: request)
+    }
+    
+    
+//  -- Clear search query parameters and resign status --
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        if searchBar.text!.count == 0 {
+            loadData()
+            
+            DispatchQueue.main.async {
+                searchBar.resignFirstResponder()
+            }
+        }
+    }
 }
 
